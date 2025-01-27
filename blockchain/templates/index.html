@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Blockchain Demo</h1>
+        
+        <div class="controls">
+            <div class="input-group">
+                <input type="text" id="blockData" placeholder="Enter block data">
+                <button onclick="mineBlock()">Mine New Block</button>
+            </div>
+            <button onclick="refreshChain()">Refresh Chain</button>
+        </div>
+
+        <div class="chain-status">
+            <h2>Chain Status</h2>
+            <p>Length: <span id="chainLength">0</span></p>
+            <p>Valid: <span id="chainValid">true</span></p>
+        </div>
+
+        <div class="blocks" id="blockchainDisplay">
+            <!-- Blocks will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        // Fetch and display the blockchain
+        async function refreshChain() {
+            const response = await fetch('/chain');
+            const data = await response.json();
+            
+            document.getElementById('chainLength').textContent = data.length;
+            document.getElementById('chainValid').textContent = data.is_valid;
+            
+            const blockchainDisplay = document.getElementById('blockchainDisplay');
+            blockchainDisplay.innerHTML = '';
+            
+            data.chain.forEach(block => {
+                const blockElement = document.createElement('div');
+                blockElement.className = 'block';
+                blockElement.innerHTML = `
+                    <h3>Block #${block.index}</h3>
+                    <p>Timestamp: ${new Date(block.timestamp * 1000).toLocaleString()}</p>
+                    <p>Data: ${block.data}</p>
+                    <p>Previous Hash: ${block.previous_hash.substring(0, 20)}...</p>
+                    <p>Hash: ${block.hash.substring(0, 20)}...</p>
+                    <p>Nonce: ${block.nonce}</p>
+                `;
+                blockchainDisplay.appendChild(blockElement);
+            });
+        }
+
+        // Mine a new block
+        async function mineBlock() {
+            const blockData = document.getElementById('blockData').value;
+            if (!blockData) {
+                alert('Please enter block data');
+                return;
+            }
+            
+            const response = await fetch(`/mine/${encodeURIComponent(blockData)}`);
+            const data = await response.json();
+            
+            document.getElementById('blockData').value = '';
+            refreshChain();
+        }
+
+        // Initial load
+        refreshChain();
+    </script>
+</body>
+</html>
